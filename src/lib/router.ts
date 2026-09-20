@@ -10,30 +10,33 @@ const PATHS: Record<Route, string> = {
   settings: '/settings',
 };
 
-function routeFromPath(pathname: string): Route {
+function routeFromHash(hash: string): Route {
+  const raw = hash.startsWith('#') ? hash.slice(1) : hash;
+  const pathname = raw || '/';
   const match = (Object.keys(PATHS) as Route[]).find((key) => PATHS[key] === pathname);
   return match ?? 'dashboard';
 }
 
-/**
- * Real URLs, no router dependency. Deep links work because `public/_redirects`
- * rewrites every path back to index.html on Cloudflare Pages.
- */
 export function useRouter() {
-  const [route, setRoute] = useState<Route>(() =>
-    typeof window === 'undefined' ? 'dashboard' : routeFromPath(window.location.pathname)
-  );
+  const [route, setRoute] = useState<Route>(() => {
+    if (typeof window === 'undefined') return 'dashboard';
+    return routeFromHash(window.location.hash);
+  });
 
   useEffect(() => {
-    const onPop = () => setRoute(routeFromPath(window.location.pathname));
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
+    const onHashChange = () => setRoute(routeFromHash(window.location.hash));
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
   const navigate = useCallback((next: Route) => {
-    if (window.location.pathname !== PATHS[next]) {
-      window.history.pushState({}, '', PATHS[next]);
+    const nextHash = PATHS[next];
+    const currentHash = window.location.hash;
+
+    if (currentHash !== `#${nextHash}`) {
+      window.location.hash = nextHash;
     }
+
     setRoute(next);
   }, []);
 
