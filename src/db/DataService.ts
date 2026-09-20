@@ -554,12 +554,14 @@ const backup = {
     if (file.app !== 'life-os') throw new Error('That file was not exported from Life OS.');
     await db.transaction(
       'rw',
-      db.habits,
-      db.habitEntries,
-      db.tasks,
-      db.journalTemplates,
-      db.journalEntries,
-      db.settings,
+      [
+        db.habits,
+        db.habitEntries,
+        db.tasks,
+        db.journalTemplates,
+        db.journalEntries,
+        db.settings,
+      ],
       async () => {
         await Promise.all([
           db.habits.clear(),
@@ -569,12 +571,16 @@ const backup = {
           db.journalEntries.clear(),
           db.settings.clear(),
         ]);
+
         await db.habits.bulkAdd(file.habits ?? []);
         await db.habitEntries.bulkAdd(file.habitEntries ?? []);
         await db.tasks.bulkAdd(file.tasks ?? []);
         await db.journalTemplates.bulkAdd(file.journalTemplates ?? []);
         await db.journalEntries.bulkAdd(file.journalEntries ?? []);
-        if (file.settings) await db.settings.put(file.settings);
+
+        if (file.settings) {
+          await db.settings.put(file.settings);
+        }
       }
     );
   },
