@@ -1,16 +1,21 @@
 /* Life OS service worker — app-shell caching so the PWA opens offline. */
+const BASE = '/life-os/';
 const CACHE = 'life-os-v1';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg'];
+const SHELL = [BASE, `${BASE}index.html`, `${BASE}manifest.webmanifest`, `${BASE}icon.svg`];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))
+      )
       .then(() => self.clients.claim())
   );
 });
@@ -19,21 +24,19 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
 
-  // Navigations: network first, fall back to the cached shell (SPA routing offline).
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put('/index.html', copy));
+          caches.open(CACHE).then((cache) => cache.put(`${BASE}index.html`, copy));
           return res;
         })
-        .catch(() => caches.match('/index.html').then((r) => r || Response.error()))
+        .catch(() => caches.match(`${BASE}index.html`).then((r) => r || Response.error()))
     );
     return;
   }
 
-  // Assets: cache first, then network.
   event.respondWith(
     caches.match(req).then(
       (cached) =>
@@ -41,7 +44,7 @@ self.addEventListener('fetch', (event) => {
         fetch(req).then((res) => {
           if (res.ok && res.type === 'basic') {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
+            caches.open(CACHE).then((cache) => cache.put(req, copy));
           }
           return res;
         })
