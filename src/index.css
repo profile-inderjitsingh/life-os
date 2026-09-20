@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    background-color: #f2f2f7;
+    /* Rubber-band bounce at the edges, as iOS does natively. */
+    overscroll-behavior-y: auto;
+  }
+
+  html.dark {
+    /* Pure black so OLED pixels switch off entirely. */
+    background-color: #000000;
+  }
+
+  body {
+    @apply bg-[#F2F2F7] text-black antialiased dark:bg-black dark:text-white;
+    font-family: theme('fontFamily.sans');
+    /* Optical sizing and tighter tracking are what make SF look like SF. */
+    letter-spacing: -0.01em;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  /* Stop iOS zooming the page when a field takes focus. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+    font-family: inherit;
+  }
+
+  button {
+    font-family: inherit;
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: none;
+  }
+}
+
+@layer utilities {
+  /* Momentum scrolling without a visible scrollbar. */
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ios-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* Respect the system setting for people who get motion sick. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
